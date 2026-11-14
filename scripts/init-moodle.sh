@@ -75,5 +75,18 @@ fi
 
 echo "Moodle initialization complete"
 
+# Make sure moodledata belongs to the web server user
+# (the install above runs as root and leaves root-owned files behind)
+chown -R www-data:www-data /var/www/moodledata
+
+# Run Moodle cron every minute in the background.
+# Required for async backup/restore, notifications, and all scheduled tasks.
+(
+  while true; do
+    su -s /bin/sh www-data -c "php /var/www/html/admin/cli/cron.php" >/proc/1/fd/1 2>&1 || true
+    sleep 60
+  done
+) &
+
 # Start Apache
 exec apache2-foreground
